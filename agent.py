@@ -80,6 +80,7 @@ def agent(observation, configuration):
                         for dir in [DIRECTIONS.NORTH, DIRECTIONS.SOUTH, DIRECTIONS.EAST, DIRECTIONS.WEST]:
                             cell = GameMap.get_cell_by_pos(game_state.map, unit.pos.translate(dir, 1))
                             if cell.has_resource() == False:
+                                #if you can, go ahead and build a city bro screw it
                                 if unit.can_build(game_state.map):
                                     actions.append((unit.build_city()))
                                 else:
