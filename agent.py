@@ -15,7 +15,6 @@ logging.basicConfig(filename='agent.log', level=logging.INFO, filemode='w')
 DIRECTIONS = Constants.DIRECTIONS
 game_state = None
 
-possible_directions = [DIRECTIONS.NORTH]
 
 def agent(observation, configuration):
     global game_state
