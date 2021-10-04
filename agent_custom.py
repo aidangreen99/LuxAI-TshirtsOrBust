@@ -1,6 +1,6 @@
 import math, sys
 from lux.game import Game
-from lux.game_map import Cell, RESOURCE_TYPES
+from lux.game_map import Cell, RESOURCE_TYPES, GameMap
 from lux.constants import Constants
 from lux.game_constants import GAME_CONSTANTS
 from lux import annotate
@@ -34,6 +34,8 @@ def agent(observation, configuration):
     player = game_state.players[observation.player]
     opponent = game_state.players[(observation.player + 1) % 2]
     width, height = game_state.map.width, game_state.map.height
+
+    targeted_tiles = []
 
     resource_tiles: list[Cell] = []
     for y in range(height):
@@ -70,9 +72,31 @@ def agent(observation, configuration):
                             if dist < closest_dist:
                                 closest_dist = dist
                                 closest_city_tile = city_tile
-                    if closest_city_tile is not None:
+                    # if the nearest city has 'low' fuel, go there and deposit it
+                    if closest_city_tile is not None and player.cities[closest_city_tile.cityid].fuel <= 400:
                         move_dir = unit.pos.direction_to(closest_city_tile.pos)
                         actions.append(unit.move(move_dir))
+                    # otherwise, go the first direction you can and try to build a city
+                    elif closest_city_tile is not None:
+                        for dir in [DIRECTIONS.NORTH, DIRECTIONS.SOUTH, DIRECTIONS.EAST, DIRECTIONS.WEST]:
+                            cell = GameMap.get_cell_by_pos(game_state.map, unit.pos.translate(dir, 1))
+                            if cell.has_resource() == False:
+                                #if you can, go ahead and build a city bro screw it
+                                if unit.can_build(game_state.map):
+                                    actions.append((unit.build_city()))
+                                else:
+                                    #check to make sure you aren't colliding with a fellow unit
+                                    for comrade in player.units:
+                                        if comrade.pos != cell.pos:
+                                            move_dir = unit.pos.direction_to(cell.pos)
+                                            actions.append(unit.move(move_dir))
+                    #get the cities to build workers
+                    for k, city in player.cities.items():
+                        for city_tile in city.citytiles:
+                            if city_tile.can_act():
+                                actions.append(city_tile.build_worker())
+
+
 
     # you can add debug annotations using the functions in the annotate object
     # actions.append(annotate.circle(0, 0))
