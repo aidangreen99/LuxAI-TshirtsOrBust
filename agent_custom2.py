@@ -1,6 +1,7 @@
 import math, sys
+from lux import game_map
 from lux.game import Game
-from lux.game_map import Cell, RESOURCE_TYPES
+from lux.game_map import Cell, RESOURCE_TYPES, GameMap
 from lux.constants import Constants
 from lux.game_constants import GAME_CONSTANTS
 from lux import annotate
@@ -45,6 +46,7 @@ def agent(observation, configuration):
 
     # we iterate over all our units and do something with them
     for unit in player.units:
+        original_move_list_length = len(actions)
         if unit.is_worker() and unit.can_act():
             closest_dist = math.inf
             closest_resource_tile = None
@@ -64,20 +66,40 @@ def agent(observation, configuration):
                 if len(player.cities) > 0:
                     closest_dist = math.inf
                     closest_city_tile = None
+
                     for k, city in player.cities.items():
                         for city_tile in city.citytiles:
+
                             dist = city_tile.pos.distance_to(unit.pos)
-                            if dist < closest_dist:
+                            if dist < closest_dist and (s for s in actions if closest_city_tile.pos in s):
                                 closest_dist = dist
                                 closest_city_tile = city_tile
-                    if closest_city_tile is not None and player.cities[closest_city_tile.cityid].fuel <= 400:
-                        move_dir = unit.pos.direction_to(closest_city_tile.pos)
-                        actions.append(unit.move(move_dir))
+
+                    if closest_city_tile is not None and player.cities[closest_city_tile.cityid].fuel <= 600:   
+                        if len(actions) == original_move_list_length:
+                            move_dir = unit.pos.direction_to(closest_city_tile.pos)
+                            if unit.can_act():
+                                actions.append(unit.move(move_dir))
+
                     elif closest_city_tile is not None:
                         for dir in [DIRECTIONS.NORTH, DIRECTIONS.SOUTH, DIRECTIONS.EAST, DIRECTIONS.WEST]:
-                            possible_city_tile = closest_city_tile.pos.translate(dir, 1)
-                            if possible_city_tile.has_resource():
+                            cell = GameMap.get_cell_by_pos(game_state.map, closest_city_tile.pos.translate(dir, 1))
+                            if cell.has_resource() != True:
+                                move_dir = unit.pos.direction_to(cell.pos)
+                                if unit.can_build(game_state.map):
+                                    if unit.can_act():
+                                        actions.append((unit.build_city()))
+                                else:
+                                    if unit.can_act():
+                                        actions.append(unit.move(move_dir))
+                                
                                 #Continue here, trying to make the unit create a city adjacent to another city
+        for k, city in player.cities.items():
+                            for city_tile in city.citytiles:
+                                if city_tile.can_act() and len(player.cities) > len(player.units):
+                                    actions.append(city_tile.build_worker())
+                                
+                                
 
     # you can add debug annotations using the functions in the annotate object
     # actions.append(annotate.circle(0, 0))
