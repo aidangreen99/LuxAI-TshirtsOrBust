@@ -71,7 +71,7 @@ def agent(observation, configuration):
                     if closest_city_tile is not None and player.cities[closest_city_tile.cityid].fuel <= 400:   
                         if len(actions) == original_move_list_length:
                             move_dir = unit.pos.direction_to(closest_city_tile.pos)
-                            if unit.can_act():
+                            if unit.can_act() and (s for s in actions if move_dir not in s):
                                 actions.append(unit.move(move_dir))
 
                     elif closest_city_tile is not None:
@@ -84,20 +84,15 @@ def agent(observation, configuration):
                                         actions.append((unit.build_city()))
                                         break
                                 else:
-                                    if unit.can_act():
+                                    if unit.can_act() and (s for s in actions if move_dir not in s):
                                         actions.append(unit.move(move_dir))
                                         break
                                 
     for k, city in player.cities.items():
                         for city_tile in city.citytiles:
                             if city_tile.can_act() and len(player.cities) > len(player.units):
-                                rand_int = randint(0,2)
-                                if rand_int == 1:
-                                    actions.append(city_tile.build_worker())
-                                    break
-                                else:
-                                    actions.append(city_tile.build_cart())
-                                    break
+                                actions.append(city_tile.build_worker())
+                                break
                             elif city_tile.can_act() and city_tile.research() not in actions:
                                 actions.append(city_tile.research())
                                 break
