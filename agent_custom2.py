@@ -5,17 +5,12 @@ from lux.game_map import Cell, RESOURCE_TYPES, GameMap
 from lux.constants import Constants
 from lux.game_constants import GAME_CONSTANTS
 from lux import annotate
-import numpy as np
-import matplotlib.pyplot as plt
-import logging
+from random import randint, sample
 
-from sklearn.cluster import KMeans
-from sklearn.datasets import make_blobs
-
-logging.basicConfig(filename='agent.log', level=logging.INFO, filemode='w')
 DIRECTIONS = Constants.DIRECTIONS
 game_state = None
 
+possible_directions = [DIRECTIONS.NORTH, DIRECTIONS.SOUTH, DIRECTIONS.EAST, DIRECTIONS.WEST]
 
 def agent(observation, configuration):
     global game_state
@@ -42,7 +37,6 @@ def agent(observation, configuration):
             cell = game_state.map.get_cell(x, y)
             if cell.has_resource():
                 resource_tiles.append(cell)
-    logging.info(f"{resource_tiles[0].resource.type}")
 
     # we iterate over all our units and do something with them
     for unit in player.units:
@@ -56,7 +50,7 @@ def agent(observation, configuration):
                     if resource_tile.resource.type == Constants.RESOURCE_TYPES.COAL and not player.researched_coal(): continue
                     if resource_tile.resource.type == Constants.RESOURCE_TYPES.URANIUM and not player.researched_uranium(): continue
                     dist = resource_tile.pos.distance_to(unit.pos)
-                    if dist < closest_dist:
+                    if dist < closest_dist and (s for s in actions if closest_city_tile.pos not in s):
                         closest_dist = dist
                         closest_resource_tile = resource_tile
                 if closest_resource_tile is not None:
@@ -69,35 +63,45 @@ def agent(observation, configuration):
 
                     for k, city in player.cities.items():
                         for city_tile in city.citytiles:
-
                             dist = city_tile.pos.distance_to(unit.pos)
-                            if dist < closest_dist and (s for s in actions if closest_city_tile.pos in s):
+                            if dist < closest_dist and (s for s in actions if closest_city_tile.pos not in s):
                                 closest_dist = dist
                                 closest_city_tile = city_tile
 
-                    if closest_city_tile is not None and player.cities[closest_city_tile.cityid].fuel <= 600:   
+                    if closest_city_tile is not None and player.cities[closest_city_tile.cityid].fuel <= 400:   
                         if len(actions) == original_move_list_length:
                             move_dir = unit.pos.direction_to(closest_city_tile.pos)
                             if unit.can_act():
                                 actions.append(unit.move(move_dir))
 
                     elif closest_city_tile is not None:
-                        for dir in [DIRECTIONS.NORTH, DIRECTIONS.SOUTH, DIRECTIONS.EAST, DIRECTIONS.WEST]:
+                        for dir in sample(possible_directions, 4):
                             cell = GameMap.get_cell_by_pos(game_state.map, closest_city_tile.pos.translate(dir, 1))
                             if cell.has_resource() != True:
                                 move_dir = unit.pos.direction_to(cell.pos)
                                 if unit.can_build(game_state.map):
                                     if unit.can_act():
                                         actions.append((unit.build_city()))
+                                        break
                                 else:
                                     if unit.can_act():
                                         actions.append(unit.move(move_dir))
+                                        break
                                 
-                                #Continue here, trying to make the unit create a city adjacent to another city
-        for k, city in player.cities.items():
-                            for city_tile in city.citytiles:
-                                if city_tile.can_act() and len(player.cities) > len(player.units):
+    for k, city in player.cities.items():
+                        for city_tile in city.citytiles:
+                            if city_tile.can_act() and len(player.cities) > len(player.units):
+                                rand_int = randint(0,2)
+                                if rand_int == 1:
                                     actions.append(city_tile.build_worker())
+                                    break
+                                else:
+                                    actions.append(city_tile.build_cart())
+                                    break
+                            elif city_tile.can_act() and city_tile.research() not in actions:
+                                actions.append(city_tile.research())
+                                break
+                                
                                 
                                 
 
