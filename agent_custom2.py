@@ -50,7 +50,7 @@ def agent(observation, configuration):
                     if resource_tile.resource.type == Constants.RESOURCE_TYPES.COAL and not player.researched_coal(): continue
                     if resource_tile.resource.type == Constants.RESOURCE_TYPES.URANIUM and not player.researched_uranium(): continue
                     dist = resource_tile.pos.distance_to(unit.pos)
-                    if dist < closest_dist and (s for s in actions if closest_city_tile.pos not in s):
+                    if dist < closest_dist and (s for s in actions if closest_resource_tile.pos not in s):
                         closest_dist = dist
                         closest_resource_tile = resource_tile
                 if closest_resource_tile is not None:
@@ -75,8 +75,9 @@ def agent(observation, configuration):
                                 actions.append(unit.move(move_dir))
 
                     elif closest_city_tile is not None:
+                        n = 1
                         for dir in sample(possible_directions, 4):
-                            cell = GameMap.get_cell_by_pos(game_state.map, closest_city_tile.pos.translate(dir, 1))
+                            cell = GameMap.get_cell_by_pos(game_state.map, closest_city_tile.pos.translate(dir, n))
                             if cell.has_resource() != True:
                                 move_dir = unit.pos.direction_to(cell.pos)
                                 if unit.can_build(game_state.map):
@@ -87,6 +88,7 @@ def agent(observation, configuration):
                                     if unit.can_act() and (s for s in actions if move_dir not in s):
                                         actions.append(unit.move(move_dir))
                                         break
+                            n += 1
                                 
     for k, city in player.cities.items():
                         for city_tile in city.citytiles:

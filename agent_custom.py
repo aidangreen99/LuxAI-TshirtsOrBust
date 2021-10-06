@@ -6,12 +6,7 @@ from lux.game_constants import GAME_CONSTANTS
 from lux import annotate
 import numpy as np
 import matplotlib.pyplot as plt
-import logging
 
-from sklearn.cluster import KMeans
-from sklearn.datasets import make_blobs
-
-logging.basicConfig(filename='agent.log', level=logging.INFO, filemode='w')
 DIRECTIONS = Constants.DIRECTIONS
 game_state = None
 
@@ -43,8 +38,7 @@ def agent(observation, configuration):
             cell = game_state.map.get_cell(x, y)
             if cell.has_resource():
                 resource_tiles.append(cell)
-    logging.info(f"{resource_tiles[0].resource.type}")
-
+                
     # we iterate over all our units and do something with them
     for unit in player.units:
         if unit.is_worker() and unit.can_act():
